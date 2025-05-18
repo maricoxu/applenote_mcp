@@ -248,6 +248,19 @@ if __name__ == "__main__":
         cleanup_note("Markdown Test Note S2", focused_test_folder)
         cleanup_note("Plain Text Default S2", "")
         cleanup_note("MD Fallback Test S2", focused_test_folder)
+        # Add cleanup for new notes from Section C
+        cleanup_note("Note with ' \" \\ & < > 测试标题特殊字符", focused_test_folder) # For Test C.1
+        cleanup_note("Target for Special Append C2", focused_test_folder) # For Test C.2
+        # Add cleanup for notes in special folder for Test C.3
+        cleanup_note("Note in Special Folder C3", "Special Folder ' \" \\ & < > 测试文件夹")
+        # Add cleanup for new notes from Section C.4 (Content Size Tests)
+        cleanup_note("Empty Content Test Note S5.3.1 PT", focused_test_folder)
+        cleanup_note("Empty Content Test Note S5.3.1 MD", focused_test_folder)
+        cleanup_note("Large Content Plain Text Test Note S5.3.2", focused_test_folder)
+        cleanup_note("Large Content Markdown Test Note S5.3.3", focused_test_folder)
+        cleanup_note("Target for Empty Append S5.3.4", focused_test_folder)
+        cleanup_note("Target for Large Append Plain Text S5.3.5", focused_test_folder)
+        cleanup_note("Target for Large Append Markdown S5.3.6", focused_test_folder)
 
         print("\\n--- Section A: Focused Create, List, Get, Append Tests ---", file=sys.stderr)
         print(f"\\n--- A.1. Create '{focused_target_title}' ---", file=sys.stderr)
@@ -255,7 +268,7 @@ if __name__ == "__main__":
         print(f"Create Response (A.1): {create_response_A1}", file=sys.stderr)
 
         print(f"\\n--- A.2. List notes in '{focused_test_folder}' after A.1 creation ---", file=sys.stderr)
-        list_response_A2 = handle_request(action="list_notes", content=None, folder=focused_test_folder)
+        list_response_A2 = handle_request(action="list_notes", content=None, title=None, folder=focused_test_folder)
         print(f"List Response (A.2): {list_response_A2}", file=sys.stderr)
         if isinstance(list_response_A2, dict) and list_response_A2.get("status") == "success":
             titles_A2 = list_response_A2.get('data', {}).get('titles', [])
@@ -387,11 +400,11 @@ if __name__ == "__main__":
         print("(Skipping Test B.9 - requires manual creation of duplicate notes in 'MCP Tests' folder named 'Duplicate Name Note')", file=sys.stderr)
 
         print("\\n--- Test B.10 (List): List notes from 'MCP Tests' folder (end of suite) ---", file=sys.stderr)
-        list_result_B10 = handle_request(action="list_notes", content=None, folder=focused_test_folder)
+        list_result_B10 = handle_request(action="list_notes", content=None, title=None, folder=focused_test_folder)
         print(f"List MCP Tests Result (B.10): {list_result_B10}", file=sys.stderr)
 
         print("\\n--- Test B.11 (List): List notes from all notes (default folder, end of suite) ---", file=sys.stderr)
-        list_result_B11 = handle_request(action="list_notes", content=None, folder="") 
+        list_result_B11 = handle_request(action="list_notes", content=None, title=None, folder="") 
         print(f"List All Notes Result (B.11): {list_result_B11}", file=sys.stderr)
 
         print("\\n--- Test B.12 (Get Content): Get final content of 'Append Test Target S3' ---", file=sys.stderr)
@@ -415,8 +428,287 @@ if __name__ == "__main__":
         print(f"Get Content Non-Existent Result (B.13): {get_content_non_existent_B13}", file=sys.stderr)
 
         print("\\n--- Test B.14 (List): List notes from a non-existent folder ---", file=sys.stderr)
-        list_non_existent_folder_B14 = handle_request(action="list_notes", content=None, folder="FolderThatDoesNotExist_B14")
+        list_non_existent_folder_B14 = handle_request(action="list_notes", content=None, title=None, folder="FolderThatDoesNotExist_B14")
         print(f"List Non-Existent Folder Result (B.14): {list_non_existent_folder_B14}", file=sys.stderr)
+
+        # --- Section C: Tests for Special Characters and Content ---
+        print("\\n\\n--- Section C: Tests for Special Characters and Content Handling ---", file=sys.stderr)
+
+        # Test C.1: Create note with special characters in title and content
+        special_char_title_C1 = "Note with ' \" \\ & < > 测试标题特殊字符"
+        special_char_content_md_C1 = (
+            "## Content with Special Chars: ' \" \\ & < > emojis 😊✨\\n"
+            "This is a line.\\n"
+            "This is another line needing nl2br.\n\n"
+            "- List item one\\n"
+            "- List item *two* with specials: ' \" \\ & < >\\n"
+            "```python\\n"
+            "print(\"Hello with ' \\\\ \" & < >\")\\n"
+            "# Comment with specials ' \" \\ & < >\n"
+            "```"
+        )
+        print(f"\\n--- Test C.1: Create '{special_char_title_C1}' with special Markdown content ---", file=sys.stderr)
+        create_response_C1 = handle_request(
+            action="create_note", 
+            title=special_char_title_C1, 
+            content=special_char_content_md_C1, 
+            folder=focused_test_folder, 
+            input_format="markdown"
+        )
+        print(f"Create Response (C.1): {create_response_C1}", file=sys.stderr)
+
+        # Verification for C.1
+        if isinstance(create_response_C1, dict) and create_response_C1.get("status") == "success":
+            print(f"\\n--- Test C.1 Verification: List and Get '{special_char_title_C1}' ---", file=sys.stderr)
+            list_response_C1_verify = handle_request(action="list_notes", content=None, title=None, folder=focused_test_folder)
+            found_C1 = False
+            if isinstance(list_response_C1_verify, dict) and list_response_C1_verify.get("status") == "success":
+                titles_C1 = list_response_C1_verify.get('data', {}).get('titles', [])
+                if special_char_title_C1 in titles_C1:
+                    found_C1 = True
+                    print(f"SUCCESS (C.1 List Verify): Note '{special_char_title_C1}' found in list.", file=sys.stderr)
+                else:
+                    print(f"WARNING (C.1 List Verify): Note '{special_char_title_C1}' NOT found in list: {titles_C1}", file=sys.stderr)
+            
+            if found_C1:
+                get_response_C1_verify = handle_request(action="get_note_content", content=None, title=special_char_title_C1, folder=focused_test_folder)
+                print(f"Get Content Response (C.1 Verify): {get_response_C1_verify}", file=sys.stderr)
+                if isinstance(get_response_C1_verify, dict) and get_response_C1_verify.get("status") == "success":
+                    retrieved_content_C1 = get_response_C1_verify.get('data', {}).get('content', '')
+                    # Basic check, more thorough comparison is hard due to HTML escaping and Markdown nuances
+                    if "Content with Special Chars: ' \" \\ &amp; &lt; &gt; emojis 😊✨" in retrieved_content_C1 and "Hello with ' \\ \" & < >" in retrieved_content_C1:
+                        print("SUCCESS (C.1 Get Verify): Key special character phrases found in retrieved content.", file=sys.stderr)
+                    else:
+                        print(f"WARNING (C.1 Get Verify): Retrieved content for '{special_char_title_C1}' might not match expected special chars.", file=sys.stderr)
+                        # print(f"Retrieved for C.1 verification:\n{retrieved_content_C1}", file=sys.stderr) # For debugging
+        print("---------------------------------", file=sys.stderr)
+
+        # Test C.2: Append content with special characters
+        target_title_C2 = "Target for Special Append C2"
+        initial_content_C2 = "Initial simple content for C2."
+        append_text_special_C2 = " Appended plain text with ' \" \\ & < > 😊✨"
+        append_md_special_C2 = (
+            "### Appended MD Section with Specials\\n"
+            "> Quote with ' \" \\ & < >\\n"
+            "And some `inline_code_with_specials('\"\\&<>')`"
+        )
+
+        print(f"\\n--- Test C.2 Setup: Create '{target_title_C2}' ---", file=sys.stderr)
+        handle_request(action="create_note", title=target_title_C2, content=initial_content_C2, folder=focused_test_folder, input_format="text")
+        
+        print(f"\\n--- Test C.2.1: Append plain text with special chars to '{target_title_C2}' ---", file=sys.stderr)
+        append_response_C2_1 = handle_request(action="append_note", title=target_title_C2, content=append_text_special_C2, folder=focused_test_folder, input_format="text")
+        print(f"Append Response (C.2.1): {append_response_C2_1}", file=sys.stderr)
+
+        print(f"\\n--- Test C.2.2: Append Markdown with special chars to '{target_title_C2}' ---", file=sys.stderr)
+        append_response_C2_2 = handle_request(action="append_note", title=target_title_C2, content=append_md_special_C2, folder=focused_test_folder, input_format="markdown")
+        print(f"Append Response (C.2.2): {append_response_C2_2}", file=sys.stderr)
+
+        # Verification for C.2
+        print(f"\\n--- Test C.2 Verification: Get content of '{target_title_C2}' after appends ---", file=sys.stderr)
+        get_response_C2_verify = handle_request(action="get_note_content", content=None, title=target_title_C2, folder=focused_test_folder)
+        print(f"Get Content Response (C.2 Verify): {get_response_C2_verify}", file=sys.stderr)
+        if isinstance(get_response_C2_verify, dict) and get_response_C2_verify.get("status") == "success":
+            retrieved_content_C2 = get_response_C2_verify.get('data', {}).get('content', '')
+            # Basic checks
+            text_append_found = "Appended plain text with ' \" \\ &amp; &lt; &gt; 😊✨" in retrieved_content_C2
+            md_append_found = "Appended MD Section with Specials" in retrieved_content_C2 and "Quote with ' \" \\ &amp; &lt; &gt;" in retrieved_content_C2 and "inline_code_with_specials('\"\\&<>')" in retrieved_content_C2
+            if initial_content_C2 in retrieved_content_C2 and text_append_found and md_append_found:
+                print("SUCCESS (C.2 Get Verify): Key phrases from initial content and special appends found.", file=sys.stderr)
+            else:
+                print(f"WARNING (C.2 Get Verify): Retrieved content for '{target_title_C2}' might be missing special appends.", file=sys.stderr)
+                # print(f"Retrieved for C.2 verification:\n{retrieved_content_C2}", file=sys.stderr) # For debugging
+        print("---------------------------------", file=sys.stderr)
+
+        # Test C.3: Operations with special characters in folder name
+        special_folder_name_C3 = "Special Folder ' \" \\ & < > 测试文件夹"
+        note_title_in_special_folder_C3 = "Note in Special Folder C3"
+        note_content_C3 = "Content for note in a folder with special name."
+
+        print(f"\\n--- Test C.3.1: Create note '{note_title_in_special_folder_C3}' in special folder '{special_folder_name_C3}' ---", file=sys.stderr)
+        create_response_C3 = handle_request(
+            action="create_note",
+            title=note_title_in_special_folder_C3,
+            content=note_content_C3,
+            folder=special_folder_name_C3,
+            input_format="text"
+        )
+        print(f"Create Response (C.3.1): {create_response_C3}", file=sys.stderr)
+
+        # Verification for C.3
+        if isinstance(create_response_C3, dict) and create_response_C3.get("status") == "success":
+            print(f"\\n--- Test C.3.2 Verification: List notes from special folder '{special_folder_name_C3}' ---", file=sys.stderr)
+            list_response_C3_verify = handle_request(action="list_notes", content=None, title=None, folder=special_folder_name_C3)
+            print(f"List Response (C.3.2): {list_response_C3_verify}", file=sys.stderr)
+            found_in_list_C3 = False
+            if isinstance(list_response_C3_verify, dict) and list_response_C3_verify.get("status") == "success":
+                titles_C3 = list_response_C3_verify.get('data', {}).get('titles', [])
+                if note_title_in_special_folder_C3 in titles_C3:
+                    found_in_list_C3 = True
+                    print(f"SUCCESS (C.3.2 List Verify): Note '{note_title_in_special_folder_C3}' found in special folder.", file=sys.stderr)
+                else:
+                    print(f"WARNING (C.3.2 List Verify): Note '{note_title_in_special_folder_C3}' NOT found in special folder list: {titles_C3}", file=sys.stderr)
+            
+            if found_in_list_C3:
+                print(f"\\n--- Test C.3.3 Verification: Get content of '{note_title_in_special_folder_C3}' from special folder ---", file=sys.stderr)
+                get_response_C3_verify = handle_request(action="get_note_content", content=None, title=note_title_in_special_folder_C3, folder=special_folder_name_C3)
+                print(f"Get Content Response (C.3.3): {get_response_C3_verify}", file=sys.stderr)
+                if isinstance(get_response_C3_verify, dict) and get_response_C3_verify.get("status") == "success":
+                    retrieved_content_C3 = get_response_C3_verify.get('data', {}).get('content', '')
+                    # Apple Notes often prepends the title to the body HTML if a title was set
+                    # And also wraps content in divs. We look for the core content.
+                    if note_content_C3 in retrieved_content_C3:
+                        print(f"SUCCESS (C.3.3 Get Verify): Core content found for note in special folder.", file=sys.stderr)
+                    else:
+                        print(f"WARNING (C.3.3 Get Verify): Retrieved content for note in special folder might not match. Expected part: '{note_content_C3}'. Got: '{retrieved_content_C3[:200]}...'", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # --- Section C.4: Tests for Content Size Boundaries ---
+        print("\\n\\n--- Section C.4: Tests for Content Size Boundaries ---", file=sys.stderr)
+
+        # C.4.1: Create note with empty content
+        empty_title_pt_C4_1 = "Empty Content Test Note S5.3.1 PT"
+        print(f"\\n--- Test C.4.1.1: Create '{empty_title_pt_C4_1}' with empty plain text content ---", file=sys.stderr)
+        create_response_C4_1_pt = handle_request(
+            action="create_note", title=empty_title_pt_C4_1, content="", folder=focused_test_folder, input_format="text"
+        )
+        print(f"Create Response (C.4.1.1 PT): {create_response_C4_1_pt}", file=sys.stderr)
+        if isinstance(create_response_C4_1_pt, dict) and create_response_C4_1_pt.get("status") == "success":
+            get_response_C4_1_pt = handle_request(action="get_note_content", content=None, title=empty_title_pt_C4_1, folder=focused_test_folder)
+            retrieved_C4_1_pt = get_response_C4_1_pt.get('data', {}).get('content', 'DefaultIfNotRetrieved')
+            # Notes might add minimal HTML structure even for empty content. 
+            # Expecting empty or something like '<div><br></div>' or similar, or just title.
+            # A simple check is if the content retrieved is very small.
+            if retrieved_C4_1_pt is not None and len(retrieved_C4_1_pt) < 50 : # Allow some minimal HTML like <div><br></div>
+                 print(f"SUCCESS (C.4.1.1 PT Get Verify): Retrieved content is small/empty as expected: '{retrieved_C4_1_pt[:50]}'", file=sys.stderr)
+            else:
+                 print(f"WARNING (C.4.1.1 PT Get Verify): Retrieved content not as expected (empty/small): '{retrieved_C4_1_pt[:200]}...'", file=sys.stderr)
+        
+        empty_title_md_C4_1 = "Empty Content Test Note S5.3.1 MD"
+        print(f"\\n--- Test C.4.1.2: Create '{empty_title_md_C4_1}' with empty Markdown content ---", file=sys.stderr)
+        create_response_C4_1_md = handle_request(
+            action="create_note", title=empty_title_md_C4_1, content="", folder=focused_test_folder, input_format="markdown"
+        )
+        print(f"Create Response (C.4.1.2 MD): {create_response_C4_1_md}", file=sys.stderr)
+        if isinstance(create_response_C4_1_md, dict) and create_response_C4_1_md.get("status") == "success":
+            get_response_C4_1_md = handle_request(action="get_note_content", content=None, title=empty_title_md_C4_1, folder=focused_test_folder)
+            retrieved_C4_1_md = get_response_C4_1_md.get('data', {}).get('content', 'DefaultIfNotRetrieved')
+            if retrieved_C4_1_md is not None and len(retrieved_C4_1_md) < 50 :
+                 print(f"SUCCESS (C.4.1.2 MD Get Verify): Retrieved content is small/empty as expected: '{retrieved_C4_1_md[:50]}'", file=sys.stderr)
+            else:
+                 print(f"WARNING (C.4.1.2 MD Get Verify): Retrieved content not as expected (empty/small): '{retrieved_C4_1_md[:200]}...'", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # Define large content strings
+        # Approx 80KB plain text. Max osascript argument length might be an issue.
+        # Reduced size slightly to test first, around 30k to avoid immediate osascript arg length limits.
+        # Max argument size for osascript can be around 262144 bytes (ARG_MAX/4 on some systems), but individual arguments might be less.
+        # Let's try with something more modest first, like 30k characters.
+        # large_plain_text_content = "START_PLAIN_LARGE_" + ("TestLine_Plain. " * 2000) + "_END_PLAIN_LARGE" # Approx 16*2000 = 32k + chrome
+        # large_markdown_content = "START_MD_LARGE_\n" + ("## SubH\nMD_TestLine. Paragraph to make it longer. Another sentence here. \n\n" * 400) + "_END_MD_LARGE" # Approx 80*400 = 32k + chrome (source MD)
+        
+        # After initial testing, found that osascript handles larger strings better if not excessively long. Let's try ~60K for plain, ~30K for MD source.
+        large_plain_text_block = "This is a moderately long line of plain text for testing purposes. "
+        large_plain_text_content = "START_PLAIN_LARGE_S532_" + (large_plain_text_block * 800) + "_END_PLAIN_LARGE_S532" # Approx 70*800 = 56KB
+
+        large_md_text_block = "### Large MD Section\nThis is a paragraph within the large markdown content. It includes **bold** and *italic* text, and a `code snippet`.\n\n"
+        large_markdown_content = "START_MD_LARGE_S533_\n" + (large_md_text_block * 400) + "_END_MD_LARGE_S533" # Approx 150*400 = 60KB source MD
+
+        # C.4.2: Create note with very large plain text content
+        large_pt_title_C4_2 = "Large Content Plain Text Test Note S5.3.2"
+        print(f"\\n--- Test C.4.2: Create '{large_pt_title_C4_2}' with large plain text ({len(large_plain_text_content)} chars) ---", file=sys.stderr)
+        create_response_C4_2 = handle_request(
+            action="create_note", title=large_pt_title_C4_2, content=large_plain_text_content, folder=focused_test_folder, input_format="text"
+        )
+        print(f"Create Response (C.4.2): {create_response_C4_2}", file=sys.stderr)
+        if isinstance(create_response_C4_2, dict) and create_response_C4_2.get("status") == "success":
+            get_response_C4_2 = handle_request(action="get_note_content", content=None, title=large_pt_title_C4_2, folder=focused_test_folder)
+            retrieved_C4_2 = get_response_C4_2.get('data', {}).get('content', '')
+            if "START_PLAIN_LARGE_S532_" in retrieved_C4_2 and "_END_PLAIN_LARGE_S532" in retrieved_C4_2 and large_plain_text_block in retrieved_C4_2:
+                print(f"SUCCESS (C.4.2 Get Verify): Large plain text content markers and part of block found. Length: {len(retrieved_C4_2)}", file=sys.stderr)
+            else:
+                print(f"WARNING (C.4.2 Get Verify): Large plain text content markers/block not found. Retrieved len: {len(retrieved_C4_2)}. Starts with: {retrieved_C4_2[:200]}...", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # C.4.3: Create note with very large Markdown content
+        large_md_title_C4_3 = "Large Content Markdown Test Note S5.3.3"
+        print(f"\\n--- Test C.4.3: Create '{large_md_title_C4_3}' with large Markdown ({len(large_markdown_content)} chars source) ---", file=sys.stderr)
+        create_response_C4_3 = handle_request(
+            action="create_note", title=large_md_title_C4_3, content=large_markdown_content, folder=focused_test_folder, input_format="markdown"
+        )
+        print(f"Create Response (C.4.3): {create_response_C4_3}", file=sys.stderr)
+        if isinstance(create_response_C4_3, dict) and create_response_C4_3.get("status") == "success":
+            get_response_C4_3 = handle_request(action="get_note_content", content=None, title=large_md_title_C4_3, folder=focused_test_folder)
+            retrieved_C4_3 = get_response_C4_3.get('data', {}).get('content', '')
+            # Check for HTML converted markers and part of content
+            if "START_MD_LARGE_S533" in retrieved_C4_3 and "_END_MD_LARGE_S533" in retrieved_C4_3 and "Large MD Section" in retrieved_C4_3 and "<code>code snippet</code>" in retrieved_C4_3:
+                print(f"SUCCESS (C.4.3 Get Verify): Large Markdown content markers and part of HTML block found. Length: {len(retrieved_C4_3)}", file=sys.stderr)
+            else:
+                print(f"WARNING (C.4.3 Get Verify): Large Markdown content markers/block not found. Retrieved len: {len(retrieved_C4_3)}. Starts with: {retrieved_C4_3[:200]}...", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # C.4.4: Append empty content to an existing note
+        empty_append_target_title_C4_4 = "Target for Empty Append S5.3.4"
+        initial_content_C4_4 = "Initial content for empty append test."
+        print(f"\\n--- Test C.4.4 Setup: Create '{empty_append_target_title_C4_4}' ---", file=sys.stderr)
+        handle_request(action="create_note", title=empty_append_target_title_C4_4, content=initial_content_C4_4, folder=focused_test_folder, input_format="text")
+        
+        print(f"\\n--- Test C.4.4.1: Append empty plain text to '{empty_append_target_title_C4_4}' ---", file=sys.stderr)
+        append_response_C4_4_pt = handle_request(action="append_note", title=empty_append_target_title_C4_4, content="", folder=focused_test_folder, input_format="text")
+        print(f"Append Response (C.4.4.1 PT): {append_response_C4_4_pt}", file=sys.stderr)
+
+        print(f"\\n--- Test C.4.4.2: Append empty Markdown to '{empty_append_target_title_C4_4}' ---", file=sys.stderr)
+        append_response_C4_4_md = handle_request(action="append_note", title=empty_append_target_title_C4_4, content="", folder=focused_test_folder, input_format="markdown")
+        print(f"Append Response (C.4.4.2 MD): {append_response_C4_4_md}", file=sys.stderr)
+
+        get_response_C4_4_verify = handle_request(action="get_note_content", content=None, title=empty_append_target_title_C4_4, folder=focused_test_folder)
+        retrieved_C4_4 = get_response_C4_4_verify.get('data', {}).get('content', '')
+        # Exact content depends on how Notes handles empty appends (might add <br> or nothing)
+        # Check if initial content is still there and content hasn't grown excessively
+        if initial_content_C4_4 in retrieved_C4_4 and len(retrieved_C4_4) < (len(initial_content_C4_4) + 100): # Allow for some minimal HTML formatting of initial content + potential <br> from appends
+            print(f"SUCCESS (C.4.4 Verify): Content after empty appends seems reasonable. Starts: '{retrieved_C4_4[:100]}...'", file=sys.stderr)
+        else:
+            print(f"WARNING (C.4.4 Verify): Content after empty appends not as expected. Retrieved: '{retrieved_C4_4[:200]}...'", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # C.4.5: Append very large plain text content
+        large_append_pt_title_C4_5 = "Target for Large Append Plain Text S5.3.5"
+        initial_content_C4_5 = "INITIAL_CONTENT_FOR_LARGE_APPEND_PT_S535. "
+        print(f"\\n--- Test C.4.5 Setup: Create '{large_append_pt_title_C4_5}' ---", file=sys.stderr)
+        handle_request(action="create_note", title=large_append_pt_title_C4_5, content=initial_content_C4_5, folder=focused_test_folder, input_format="text")
+        
+        print(f"\\n--- Test C.4.5: Append large plain text to '{large_append_pt_title_C4_5}' ({len(large_plain_text_content)} chars)---", file=sys.stderr)
+        append_response_C4_5 = handle_request(action="append_note", title=large_append_pt_title_C4_5, content=large_plain_text_content, folder=focused_test_folder, input_format="text")
+        print(f"Append Response (C.4.5): {append_response_C4_5}", file=sys.stderr)
+
+        if isinstance(append_response_C4_5, dict) and append_response_C4_5.get("status") == "success":
+            get_response_C4_5 = handle_request(action="get_note_content", content=None, title=large_append_pt_title_C4_5, folder=focused_test_folder)
+            retrieved_C4_5 = get_response_C4_5.get('data', {}).get('content', '')
+            if initial_content_C4_5 in retrieved_C4_5 and "START_PLAIN_LARGE_S532_" in retrieved_C4_5 and "_END_PLAIN_LARGE_S532" in retrieved_C4_5:
+                print(f"SUCCESS (C.4.5 Get Verify): Initial and large plain text append markers found. Length: {len(retrieved_C4_5)}", file=sys.stderr)
+            else:
+                print(f"WARNING (C.4.5 Get Verify): Appended large plain text content markers not found. Retrieved len: {len(retrieved_C4_5)}. Starts with: {retrieved_C4_5[:200]}...", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
+        # C.4.6: Append very large Markdown content
+        large_append_md_title_C4_6 = "Target for Large Append Markdown S5.3.6"
+        initial_content_C4_6 = "INITIAL_CONTENT_FOR_LARGE_APPEND_MD_S536. "
+        print(f"\\n--- Test C.4.6 Setup: Create '{large_append_md_title_C4_6}' ---", file=sys.stderr)
+        handle_request(action="create_note", title=large_append_md_title_C4_6, content=initial_content_C4_6, folder=focused_test_folder, input_format="text")
+
+        print(f"\\n--- Test C.4.6: Append large Markdown to '{large_append_md_title_C4_6}' ({len(large_markdown_content)} chars source) ---", file=sys.stderr)
+        append_response_C4_6 = handle_request(action="append_note", title=large_append_md_title_C4_6, content=large_markdown_content, folder=focused_test_folder, input_format="markdown")
+        print(f"Append Response (C.4.6): {append_response_C4_6}", file=sys.stderr)
+
+        if isinstance(append_response_C4_6, dict) and append_response_C4_6.get("status") == "success":
+            get_response_C4_6 = handle_request(action="get_note_content", content=None, title=large_append_md_title_C4_6, folder=focused_test_folder)
+            retrieved_C4_6 = get_response_C4_6.get('data', {}).get('content', '')
+            if initial_content_C4_6 in retrieved_C4_6 and "START_MD_LARGE_S533" in retrieved_C4_6 and "_END_MD_LARGE_S533" in retrieved_C4_6 and "<code>code snippet</code>" in retrieved_C4_6 :
+                print(f"SUCCESS (C.4.6 Get Verify): Initial and large Markdown append markers and HTML block found. Length: {len(retrieved_C4_6)}", file=sys.stderr)
+            else:
+                print(f"WARNING (C.4.6 Get Verify): Appended large Markdown content markers/block not found. Retrieved len: {len(retrieved_C4_6)}. Starts with: {retrieved_C4_6[:200]}...", file=sys.stderr)
+        print("---------------------------------", file=sys.stderr)
+
 
         print("\\n--- Full Test Suite Run Complete ---", file=sys.stderr)
     else:
