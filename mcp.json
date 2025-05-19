@@ -1,0 +1,161 @@
+{
+  "name": "Apple Notes MCP",
+  "description": "Manages Apple Notes, allowing creation, appending, listing, and reading of notes with Markdown support.",
+  "version": "1.0.0",
+  "invocation": {
+    "type": "script",
+    "command": "python3",
+    "args": ["src/mcp_handler.py"],
+    "working_directory": "."
+  },
+  "capabilities": {
+    "create_note": {
+      "description": "Creates a new note in Apple Notes. Content can be plain text or Markdown (converted to HTML).",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the note. If empty, Notes may use the first line of content."
+          },
+          "content": {
+            "type": "string",
+            "description": "The body of the note. Can be plain text or Markdown."
+          },
+          "folder": {
+            "type": "string",
+            "description": "The folder to create the note in. If empty or not specified, uses the default Notes location."
+          },
+          "markdown_extensions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of python-markdown extensions to use (e.g., [\"fenced_code\", \"tables\", \"nl2br\"]). Defaults to these if not provided and content is Markdown-like.",
+            "default": ["fenced_code", "tables", "nl2br"]
+          }
+        },
+        "required": ["content"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["success", "error"]},
+          "note_id": {"type": "string", "description": "Identifier of the created note (usually title)."},
+          "message": {"type": "string"}
+        },
+        "required": ["status", "message"]
+      }
+    },
+    "append_note": {
+      "description": "Appends content to an existing note. Content can be plain text or Markdown.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the note to append to."
+          },
+          "content": {
+            "type": "string",
+            "description": "The content to append. Can be plain text or Markdown."
+          },
+          "folder": {
+            "type": "string",
+            "description": "The folder where the note resides. Optional."
+          },
+          "markdown_extensions": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "List of python-markdown extensions to use.",
+            "default": ["fenced_code", "tables", "nl2br"]
+          }
+        },
+        "required": ["title", "content"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["success", "error"]},
+          "message": {"type": "string"}
+        },
+        "required": ["status", "message"]
+      }
+    },
+    "list_notes": {
+      "description": "Lists the titles of notes, optionally filtered by folder.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "folder": {
+            "type": "string",
+            "description": "The folder to list notes from. If empty or not specified, lists from all Notes."
+          }
+        },
+        "required": []
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["success", "error"]},
+          "notes": {
+            "type": "array",
+            "items": {"type": "string"},
+            "description": "A list of note titles."
+          },
+          "message": {"type": "string"}
+        },
+        "required": ["status"]
+      }
+    },
+    "get_note_content": {
+      "description": "Retrieves the HTML content of a specific note.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the note to retrieve."
+          },
+          "folder": {
+            "type": "string",
+            "description": "The folder where the note resides. Optional."
+          }
+        },
+        "required": ["title"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["success", "error"]},
+          "content": {"type": "string", "description": "The HTML content of the note."},
+          "message": {"type": "string"}
+        },
+        "required": ["status"]
+      }
+    },
+    "delete_note": {
+      "description": "Deletes a note. Useful for cleanup or management.",
+      "parameters": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The title of the note to delete."
+          },
+          "folder": {
+            "type": "string",
+            "description": "The folder where the note resides. Optional."
+          }
+        },
+        "required": ["title"]
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "status": {"type": "string", "enum": ["success", "error"]},
+          "message": {"type": "string"}
+        },
+        "required": ["status", "message"]
+      }
+    }
+  }
+}

@@ -54,16 +54,16 @@
         - Empty content and very large content (approx. 50-60KB).
     - All tests included appropriate cleanup steps to ensure test atomicity.
 
-### Stage 6: MCP Service Integration (IN PROGRESS)
+### Stage 6: MCP Service Integration (COMPLETED)
 - **Objective**: Transform `mcp_handler.py` into a proper MCP service that accepts JSON requests via stdin and returns JSON responses via stdout. Create `mcp.json` for service definition.
-- **Status**: IN PROGRESS
+- **Status**: COMPLETED
 - **Sub-stages**:
     - **S6.1: `mcp_handler.py` MCP Service Transformation (COMPLETED)**
         - **Description**: Refactored `mcp_handler.py` to handle JSON-RPC like requests, manage `stdin`/`stdout`/`stderr` appropriately, and include a self-contained test suite runnable with `--run-tests`. Successfully fixed all linting and indentation issues, and internal tests are passing.
         - **Status**: COMPLETED
-    - **S6.2: Create `mcp.json` configuration file (PENDING)**
-        - **Description**: Define the service capabilities, commands, and arguments in `mcp.json`.
-        - **Status**: PENDING
+    - **S6.2: Create `mcp.json` configuration file (COMPLETED)**
+        - **Description**: Defined the service capabilities, commands, arguments, and invocation method in `mcp.json`.
+        - **Status**: COMPLETED
 
 ### Stage 7: Code Refinement, Documentation, and Advanced Formatting (Planned)
 - **Objective**: General code cleanup, add comprehensive docstrings, refine `README.md` and `DESIGN.md`. Explore any remaining advanced formatting options for notes.
