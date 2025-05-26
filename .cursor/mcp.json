@@ -2,7 +2,7 @@
   "mcpServers": {
     "applenote_mcp_service": {
       "command": "/Users/xuyehua/Code/applenote_mcp/.venv/bin/python",
-      "args": ["/Users/xuyehua/Code/applenote_mcp/src/mcp_handler.py"],
+      "args": ["/Users/xuyehua/Code/applenote_mcp/src/mcp_server.py"],
       "env": {}
     }
   }
