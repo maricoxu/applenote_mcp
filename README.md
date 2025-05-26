@@ -1,114 +1,258 @@
-# applenote_mcp
+# Apple Notes MCP Server
 
-## 项目目标
+一个让AI助手（如Cursor）能够直接操作Apple Notes的MCP (Model Context Protocol) 服务器。
 
-`applenote_mcp` 旨在设计一个机制（概念上作为MCP服务），通过该机制，AI（如Cursor内的助手）可以将文本内容（特别是AI生成的思考、笔记、代码片段等）自动化地、以用户友好的格式写入用户的苹果备忘录 (Apple Notes) 中。
+## ✨ 功能特性
 
-核心功能包括：
-- 通过 AppleScript 与苹果备忘录进行交互。
-- 封装常用的备忘录操作，如创建新笔记、追加到现有笔记。
-- 探索将输入文本（如Markdown）转换为苹果备忘录支持的富文本格式的方法。 
+- 🆕 **创建笔记** - 支持文本和Markdown格式
+- 📝 **追加内容** - 向现有笔记添加内容
+- 📋 **列出笔记** - 按文件夹浏览笔记
+- 🔍 **获取内容** - 读取笔记的完整内容
+- 📁 **文件夹支持** - 在指定文件夹中组织笔记
+- 🎨 **Markdown转换** - 自动将Markdown转换为富文本
 
-## Features
-- Create new notes in Apple Notes.
-- Specify target folder and title for new notes.
-- Append content to existing notes (identified by title and optional folder).
-- List note titles from a specific folder or all notes.
-- Retrieve the content (HTML) of a specific note.
-- Basic Markdown to HTML conversion for note content and appended content (requires `python-markdown` library).
-- Includes helper AppleScript for deleting notes by title for easier testing and cleanup.
+## 🚀 快速开始
 
-## MCP Integration (Conceptual)
+### 1. 环境要求
 
-This project can be conceptually integrated as a custom MCP (Multi-Capability Platform) service, allowing an AI assistant like Cursor to interact with Apple Notes.
+- **macOS** (需要Apple Notes应用)
+- **Python 3.11+**
+- **Cursor IDE** (或其他支持MCP的AI助手)
 
-### Overview
+### 2. 安装步骤
 
-The `applenote_mcp/src/mcp_handler.py` script serves as the entry point for this service. When invoked, it expects a JSON payload describing the desired action and its parameters via standard input (stdin). It processes the request by calling the appropriate AppleScripts and then returns a JSON response via standard output (stdout).
+#### 方法一：一键安装（推荐）
+```bash
+git clone https://github.com/maricoxu/applenote_mcp.git
+cd applenote_mcp
+./install.sh
+```
 
-### Communication Protocol
+安装脚本会自动：
+- 创建虚拟环境
+- 安装所有依赖
+- 测试MCP服务器
+- 生成配置文件模板
+- 可选：自动更新Cursor配置
 
-*   **Input (stdin)**: A JSON object specifying the action and its arguments.
-    ```json
-    {
-        "action": "<action_name>",
-        "title": "<note_title>",
-        "content": "<note_content_or_content_to_append>",
-        "folder": "<target_folder_name>",
-        "input_format": "<text_or_markdown>"
-    }
-    ```
-    - `action`: (string, required) One of `"create_note"`, `"append_note"`, `"list_notes"`, `"get_note_content"`.
-    - `title`: (string, optional/required based on action) The title of the note.
-    - `content`: (string, optional/required based on action) The content for creating or appending.
-    - `folder`: (string, optional) The target folder in Apple Notes. Defaults to the main Notes account if empty or not provided.
-    - `input_format`: (string, optional, defaults to "text") Specifies if the `content` is `"text"` or `"markdown"`.
+#### 方法二：手动安装
+```bash
+# 克隆项目
+git clone https://github.com/maricoxu/applenote_mcp.git
+cd applenote_mcp
 
-*   **Output (stdout)**: A JSON object indicating the result of the operation.
-    *   On success:
-        ```json
-        {
-            "status": "success",
-            "message": "Descriptive success message.",
-            "data": { /* action-specific data, e.g., list of titles, note content, or details from script */ }
-        }
-        ```
-    *   On error:
-        ```json
-        {
-            "status": "error",
-            "message": "Detailed error message."
-        }
-        ```
+# 创建虚拟环境
+python3 -m venv .venv
+source .venv/bin/activate  # macOS/Linux
 
-### Example Invocation (Conceptual)
+# 安装依赖
+pip install -r requirements.txt
+```
 
-An AI assistant, upon needing to create a note, would internally:
-1.  Construct the JSON request:
-    ```json
-    {
-        "action": "create_note",
-        "title": "Shopping List",
-        "content": "- Apples\\n- Bananas",
-        "folder": "Groceries",
-        "input_format": "markdown"
-    }
-    ```
-2.  Invoke the `mcp_handler.py` script (configured in `mcp.json`), passing the JSON via stdin.
-3.  Receive and parse the JSON response from stdout.
+### 3. 配置Cursor
 
-### Registering as an MCP Server in Cursor
-
-To make this service available to Cursor, you would define it in Cursor's MCP configuration file (`~/.cursor/mcp.json`). This involves specifying how Cursor should launch and communicate with your script.
-
-Add an entry to the `mcpServers` object in `~/.cursor/mcp.json`:
+#### 方法一：全局配置（推荐）
+编辑 `~/.cursor/mcp.json` 文件：
 
 ```json
 {
-  // ... other configurations in your mcp.json ...
+  "repositories": {
+    "allowedDirectories": [
+      "/Users/你的用户名"
+    ]
+  },
   "mcpServers": {
-    // ... other existing servers ...
     "applenote_mcp_service": {
-      "command": "python3",
+      "command": "/Users/你的用户名/path/to/applenote_mcp/.venv/bin/python",
       "args": [
-        "/ABSOLUTE/PATH/TO/YOUR/applenote_mcp/src/mcp_handler.py" 
+        "/Users/你的用户名/path/to/applenote_mcp/src/mcp_server.py"
       ],
       "disabled": false,
-      "autoApprove": true 
+      "autoApprove": true
     }
   }
 }
 ```
-**IMPORTANT**: 
-1.  Replace `/ABSOLUTE/PATH/TO/YOUR/applenote_mcp/src/mcp_handler.py` with the correct absolute path to the `mcp_handler.py` script on your system.
-2.  The `mcp_handler.py` script needs to be modified to:
-    *   Read a single line of JSON from `sys.stdin` in its `if __name__ == "__main__":` block.
-    *   Parse this JSON.
-    *   Call `handle_request()` with the parsed arguments.
-    *   Ensure `handle_request()` always returns a dictionary structured as described above (status, message, data/error).
-    *   Print the returned dictionary as a JSON string to `sys.stdout`.
-    *   All `print()` statements used for logging/debugging within `handle_request` and its helper scripts should be redirected to `sys.stderr` to avoid interfering with the JSON output on `stdout`.
 
-This setup allows `mcp_handler.py` to function as a simple, stateless command-line service that processes one request per invocation.
+**⚠️ 重要**：请将路径替换为你的实际路径！
 
-## Development Notes 
+#### 方法二：项目配置
+在项目根目录创建 `.cursor/mcp.json`：
+
+```json
+{
+  "mcpServers": {
+    "applenote_mcp_service": {
+      "command": "/Users/你的用户名/path/to/applenote_mcp/.venv/bin/python",
+      "args": [
+        "/Users/你的用户名/path/to/applenote_mcp/src/mcp_server.py"
+      ],
+      "env": {}
+    }
+  }
+}
+```
+
+### 4. 测试安装
+
+运行测试脚本验证安装：
+
+```bash
+python test_mcp_connection.py
+```
+
+如果看到 `✅ MCP服务器初始化成功!`，说明安装成功。
+
+### 5. 重启Cursor
+
+重启Cursor IDE让配置生效。
+
+## 📖 使用方法
+
+### 在Cursor中使用
+
+重启Cursor后，你可以直接在对话中使用Apple Notes功能：
+
+#### 创建笔记
+```
+请帮我创建一个笔记，标题是"今日任务"，内容是：
+# 工作计划
+- 完成项目文档
+- 开会讨论需求
+- 代码review
+```
+
+#### 追加内容
+```
+请在"今日任务"笔记中追加：
+## 下午安排
+- 3点：客户电话
+- 4点：团队会议
+```
+
+#### 列出笔记
+```
+请列出我的所有笔记
+```
+
+#### 获取笔记内容
+```
+请显示"今日任务"笔记的内容
+```
+
+### 可用工具
+
+| 工具名称 | 功能 | 参数 |
+|---------|------|------|
+| `create_apple_note` | 创建新笔记 | `title`, `content`, `folder`, `input_format` |
+| `append_to_apple_note` | 追加内容 | `title`, `content`, `folder`, `input_format` |
+| `list_apple_notes` | 列出笔记 | `folder` |
+| `get_apple_note_content` | 获取内容 | `title`, `folder` |
+
+### 参数说明
+
+- **title**: 笔记标题（可选，空则自动生成）
+- **content**: 笔记内容
+- **folder**: 文件夹名称（可选，空则使用默认文件夹）
+- **input_format**: 输入格式，`"text"` 或 `"markdown"`（默认：`"text"`）
+
+## 🛠️ 开发和调试
+
+### 项目结构
+```
+applenote_mcp/
+├── src/
+│   ├── mcp_server.py          # MCP服务器主文件
+│   └── applescripts/          # AppleScript脚本
+│       ├── create_note_advanced.scpt
+│       ├── append_to_note.scpt
+│       ├── list_notes.scpt
+│       └── get_note_content.scpt
+├── tests/                     # 单元测试
+├── test_mcp_connection.py     # 连接测试脚本
+├── requirements.txt           # Python依赖
+└── README.md                  # 本文件
+```
+
+### 手动测试AppleScript
+
+```bash
+# 测试创建笔记
+osascript src/applescripts/create_note_advanced.scpt "测试标题" "测试内容" ""
+
+# 测试列出笔记
+osascript src/applescripts/list_notes.scpt ""
+```
+
+### 调试MCP服务器
+
+```bash
+# 检查语法
+python -m py_compile src/mcp_server.py
+
+# 测试导入
+python -c "import sys; sys.path.insert(0, 'src'); import mcp_server; print('OK')"
+
+# 运行连接测试
+python test_mcp_connection.py
+```
+
+## 🔧 故障排除
+
+### 常见问题
+
+#### 1. "Failed to create client" 错误
+- 检查配置文件路径是否正确
+- 确保虚拟环境路径是绝对路径
+- 重启Cursor
+
+#### 2. "osascript command not found"
+- 确保在macOS系统上运行
+- 检查系统PATH设置
+
+#### 3. "Script not found" 错误
+- 确保AppleScript文件存在
+- 检查文件权限
+
+#### 4. 笔记创建失败
+- 确保Apple Notes应用已安装并可访问
+- 检查系统权限设置
+
+### 获取详细日志
+
+在Cursor中查看MCP日志：
+1. 打开Cursor设置
+2. 查看MCP Logs面板
+3. 查找错误信息
+
+## 🤝 贡献
+
+欢迎提交Issue和Pull Request！
+
+### 开发环境设置
+
+```bash
+# 克隆项目
+git clone https://github.com/maricoxu/applenote_mcp.git
+cd applenote_mcp
+
+# 安装开发依赖
+pip install -r requirements.txt
+
+# 运行测试
+python -m unittest discover tests/
+```
+
+## 📄 许可证
+
+MIT License
+
+## 🙏 致谢
+
+- [Model Context Protocol](https://modelcontextprotocol.io/) - 提供了强大的AI工具集成框架
+- [Apple Notes](https://www.apple.com/notes/) - 优秀的笔记应用
+- [Cursor](https://cursor.sh/) - 智能代码编辑器
+
+---
+
+**💡 提示**: 如果遇到问题，请先查看[故障排除](#-故障排除)部分，或在GitHub上提交Issue。 
