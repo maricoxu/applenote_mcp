@@ -65,6 +65,28 @@
         - **Description**: Defined the service capabilities, commands, arguments, and invocation method in `mcp.json`.
         - **Status**: COMPLETED
 
-### Stage 7: Code Refinement, Documentation, and Advanced Formatting (Planned)
+### Stage 7: Cursor MCP Integration (COMPLETED)
+- **Objective**: Integrate the MCP service with Cursor IDE using the official MCP Python SDK and FastMCP framework.
+- **Status**: COMPLETED
+- **Key Achievements**:
+    - **MCP SDK Installation**: Successfully installed official MCP Python SDK (`mcp[cli]`) with Python 3.11 in virtual environment.
+    - **FastMCP Implementation**: Completely rewrote `mcp_handler.py` using FastMCP framework with proper tool declarations:
+        - `@mcp.tool()` decorators for each function
+        - Proper parameter typing and documentation
+        - Standard MCP server lifecycle management
+    - **Tool Declaration**: Implemented 4 core tools:
+        - `create_apple_note`: Create new notes with Markdown support
+        - `append_to_apple_note`: Append content to existing notes
+        - `list_apple_notes`: List notes by folder
+        - `get_apple_note_content`: Retrieve note content
+    - **Cursor Configuration**: Created proper `mcp.json` configuration file for Cursor with correct server invocation paths.
+    - **Dependencies Management**: Generated `requirements.txt` with all necessary dependencies including `mcp`, `markdown`, and supporting libraries.
+- **Key Learnings**:
+    - MCP servers are long-running services that listen for connections (not one-shot scripts)
+    - FastMCP provides a clean, decorator-based approach to tool declaration
+    - Cursor expects specific `mcp.json` format with `mcpServers` configuration
+    - Virtual environment paths must be absolute in MCP configuration
+
+### Stage 8: Code Refinement, Documentation, and Advanced Formatting (Planned)
 - **Objective**: General code cleanup, add comprehensive docstrings, refine `README.md` and `DESIGN.md`. Explore any remaining advanced formatting options for notes.
 - **Status**: Planned
