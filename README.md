@@ -11,6 +11,7 @@
 - 📁 **文件夹支持** - 在指定文件夹中组织笔记
 - 🎨 **Markdown转换** - 自动将Markdown转换为富文本
 - 🔄 **格式转换** - 支持如流知识库和Apple Notes优化格式转换
+- 🎯 **智能格式化** - 使用模拟用户操作创建真正的富文本格式，解决段落间距问题
 
 ## 🚀 快速开始
 
@@ -177,6 +178,25 @@ python test_mcp_connection.py
 请将"技术文档"笔记转换为Apple Notes优化格式
 ```
 
+#### 智能格式化创建（推荐）
+```
+请使用智能格式化功能创建一个笔记，标题是"PyTorch学习笔记"，内容是：
+# PyTorch基础
+
+## 张量操作
+
+### 创建张量
+- torch.tensor()
+- torch.zeros()
+- torch.ones()
+
+### 张量运算
+基本的数学运算包括加减乘除等。
+
+## 自动微分
+PyTorch的自动微分功能非常强大。
+```
+
 ### 可用工具
 
 | 工具名称 | 功能 | 参数 |
@@ -188,6 +208,8 @@ python test_mcp_connection.py
 | `convert_note_to_ruliu_format` | 转换为如流格式 | `title`, `folder`, `format_style` |
 | `convert_note_to_apple_notes_format` | 转换为Apple Notes优化格式 | `title`, `folder` |
 | `convert_markdown_to_apple_notes_format` | Markdown转Apple Notes格式 | `markdown_content` |
+| `create_rich_apple_note` | 创建原生富文本笔记 | `title`, `markdown_content`, `folder` |
+| `create_formatted_apple_note` | 创建智能格式化笔记（推荐） | `title`, `markdown_content`, `folder` |
 
 ### 参数说明
 
@@ -289,6 +311,15 @@ rm -rf .venv
 - **Markdown格式在Apple Notes中显示不佳**：使用`convert_markdown_to_apple_notes_format`工具
 - **复杂表格转换异常**：表格会自动转换为简单的列表格式
 - **代码块格式丢失**：代码块会转换为缩进文本，保持可读性
+
+#### 8. 段落间距问题（已解决）
+- **问题**：Apple Notes中段落间距过小，文本显示紧凑
+- **解决方案**：使用新的`create_formatted_apple_note`工具
+- **原理**：通过模拟用户操作，使用Apple Notes原生格式化功能
+- **注意事项**：
+  - 创建过程中请勿操作键盘和鼠标
+  - 确保Apple Notes应用有权限接收键盘事件
+  - 如遇权限问题，请在系统偏好设置→安全性与隐私→辅助功能中授权
 
 ### 获取详细日志
 

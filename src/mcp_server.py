@@ -974,6 +974,28 @@ async def handle_list_tools() -> list[Tool]:
                 },
                 "required": ["markdown_content"]
             }
+        ),
+        Tool(
+            name="create_formatted_apple_note",
+            description="使用模拟用户操作创建真正的Apple Notes富文本格式笔记，解决段落间距问题",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "笔记标题（可选，如果为空则自动生成）"
+                    },
+                    "markdown_content": {
+                        "type": "string",
+                        "description": "Markdown格式的内容"
+                    },
+                    "folder": {
+                        "type": "string",
+                        "description": "目标文件夹（可选，如果为空则使用默认文件夹）"
+                    }
+                },
+                "required": ["markdown_content"]
+            }
         )
     ]
 
@@ -1231,6 +1253,23 @@ async def handle_call_tool(name: str, arguments: dict) -> list[TextContent]:
         if result["status"] == "success":
             display_title = title if title else "Untitled (auto-generated)"
             result["message"] = f"Note '{display_title}' created successfully."
+        
+        return [TextContent(type="text", text=str(result))]
+    
+    elif name == "create_formatted_apple_note":
+        title = arguments.get("title", "")
+        markdown_content = arguments.get("markdown_content", "")
+        folder = arguments.get("folder", "")
+        
+        # 使用模拟用户操作创建真正的富文本格式笔记
+        effective_title = title if title else ""
+        effective_folder = folder if folder else ""
+        
+        result = _execute_applescript("create_note_with_formatting.scpt", effective_title, markdown_content, effective_folder)
+        
+        if result["status"] == "success":
+            display_title = title if title else "Untitled (auto-generated)"
+            result["message"] = f"Formatted note '{display_title}' created successfully with proper spacing."
         
         return [TextContent(type="text", text=str(result))]
     
