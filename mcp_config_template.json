@@ -1,0 +1,17 @@
+{
+  "repositories": {
+    "allowedDirectories": [
+      "/Users/xuyehua"
+    ]
+  },
+  "mcpServers": {
+    "applenote_mcp_service": {
+      "command": "/Users/xuyehua/Code/applenote_mcp/.venv/bin/python",
+      "args": [
+        "/Users/xuyehua/Code/applenote_mcp/src/mcp_server.py"
+      ],
+      "disabled": false,
+      "autoApprove": true
+    }
+  }
+}

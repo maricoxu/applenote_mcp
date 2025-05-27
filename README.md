@@ -16,8 +16,10 @@
 ### 1. 环境要求
 
 - **macOS** (需要Apple Notes应用)
-- **Python 3.11+**
+- **Python 3.10+** (推荐Python 3.11+)
 - **Cursor IDE** (或其他支持MCP的AI助手)
+
+⚠️ **重要**：MCP库需要Python 3.10或更高版本。如果你的系统Python版本过低，安装脚本会自动提示你升级。
 
 ### 2. 安装步骤
 
@@ -29,6 +31,7 @@ cd applenote_mcp
 ```
 
 安装脚本会自动：
+- 检测并使用合适的Python版本（优先使用Python 3.11+）
 - 创建虚拟环境
 - 安装所有依赖
 - 测试MCP服务器
@@ -41,15 +44,41 @@ cd applenote_mcp
 git clone https://github.com/maricoxu/applenote_mcp.git
 cd applenote_mcp
 
+# 确保使用Python 3.10+
+python3.11 --version  # 或 python3.10 --version
+
 # 创建虚拟环境
-python3 -m venv .venv
+python3.11 -m venv .venv  # 或使用你的Python 3.10+版本
 source .venv/bin/activate  # macOS/Linux
 
 # 安装依赖
 pip install -r requirements.txt
 ```
 
-### 3. 配置Cursor
+### 3. Python版本升级（如需要）
+
+如果你的系统Python版本低于3.10，请先升级：
+
+#### 使用Homebrew（推荐）
+```bash
+# 安装Python 3.11
+brew install python@3.11
+
+# 验证安装
+/opt/homebrew/bin/python3.11 --version
+```
+
+#### 使用pyenv
+```bash
+# 安装pyenv（如果未安装）
+brew install pyenv
+
+# 安装Python 3.11
+pyenv install 3.11.12
+pyenv global 3.11.12
+```
+
+### 4. 配置Cursor
 
 #### 方法一：全局配置（推荐）
 编辑 `~/.cursor/mcp.json` 文件：
@@ -74,7 +103,9 @@ pip install -r requirements.txt
 }
 ```
 
-**⚠️ 重要**：请将路径替换为你的实际路径！
+**⚠️ 重要**：
+- 请将路径替换为你的实际路径！
+- 如果使用了一键安装脚本，配置可能已自动完成
 
 #### 方法二：项目配置
 在项目根目录创建 `.cursor/mcp.json`：
@@ -93,7 +124,7 @@ pip install -r requirements.txt
 }
 ```
 
-### 4. 测试安装
+### 5. 测试安装
 
 运行测试脚本验证安装：
 
@@ -103,7 +134,7 @@ python test_mcp_connection.py
 
 如果看到 `✅ MCP服务器初始化成功!`，说明安装成功。
 
-### 5. 重启Cursor
+### 6. 重启Cursor
 
 重启Cursor IDE让配置生效。
 
@@ -170,6 +201,7 @@ applenote_mcp/
 │       └── get_note_content.scpt
 ├── tests/                     # 单元测试
 ├── test_mcp_connection.py     # 连接测试脚本
+├── install.sh                 # 一键安装脚本
 ├── requirements.txt           # Python依赖
 └── README.md                  # 本文件
 ```
@@ -201,22 +233,46 @@ python test_mcp_connection.py
 
 ### 常见问题
 
-#### 1. "Failed to create client" 错误
+#### 1. Python版本过低错误
+```
+ERROR: Could not find a version that satisfies the requirement mcp>=1.9.0
+```
+
+**解决方案**：
+```bash
+# 检查Python版本
+python3 --version
+
+# 如果低于3.10，请升级
+brew install python@3.11
+
+# 重新运行安装脚本
+./install.sh
+```
+
+#### 2. "Failed to create client" 错误
 - 检查配置文件路径是否正确
 - 确保虚拟环境路径是绝对路径
 - 重启Cursor
 
-#### 2. "osascript command not found"
+#### 3. "osascript command not found"
 - 确保在macOS系统上运行
 - 检查系统PATH设置
 
-#### 3. "Script not found" 错误
+#### 4. "Script not found" 错误
 - 确保AppleScript文件存在
 - 检查文件权限
 
-#### 4. 笔记创建失败
+#### 5. 笔记创建失败
 - 确保Apple Notes应用已安装并可访问
 - 检查系统权限设置
+
+#### 6. 虚拟环境损坏
+```bash
+# 删除并重新创建虚拟环境
+rm -rf .venv
+./install.sh
+```
 
 ### 获取详细日志
 
@@ -224,6 +280,15 @@ python test_mcp_connection.py
 1. 打开Cursor设置
 2. 查看MCP Logs面板
 3. 查找错误信息
+
+### 版本兼容性
+
+| Python版本 | MCP支持 | 推荐程度 |
+|-----------|---------|----------|
+| 3.9及以下 | ❌ 不支持 | - |
+| 3.10 | ✅ 支持 | 🟡 可用 |
+| 3.11 | ✅ 支持 | 🟢 推荐 |
+| 3.12+ | ✅ 支持 | 🟢 推荐 |
 
 ## 🤝 贡献
 
