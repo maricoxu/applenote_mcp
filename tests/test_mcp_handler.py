@@ -56,7 +56,7 @@ class TestMCPHandlerStage2(unittest.TestCase):
         # Ensure mcp_handler.markdown is reset before each test
         # It will be patched specifically within tests that need to control it
         if mcp_handler: # Ensure mcp_handler module was imported
-            mcp_handler.markdown = real_markdown_lib_for_setup
+        mcp_handler.markdown = real_markdown_lib_for_setup
 
 
     def tearDown(self):
@@ -64,7 +64,7 @@ class TestMCPHandlerStage2(unittest.TestCase):
         sys.stdout = sys.__stdout__
         # Restore mcp_handler.markdown to its original state after all tests in the class
         if mcp_handler: # Ensure mcp_handler module was imported
-            mcp_handler.markdown = real_markdown_lib_for_setup
+        mcp_handler.markdown = real_markdown_lib_for_setup
 
     @patch('subprocess.run')
     @patch('os.path.exists', return_value=True)

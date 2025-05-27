@@ -7,6 +7,9 @@ mcp>=1.9.0
 # Markdown处理 - 将Markdown转换为HTML格式
 Markdown>=3.8
 
+# HTML解析 - 用于如流格式转换
+beautifulsoup4>=4.12.0
+
 # 以下是MCP SDK的间接依赖，通常会自动安装
 # 如果遇到安装问题，可以手动安装这些包：
 
