@@ -9,6 +9,7 @@ import subprocess
 import os
 import sys
 from typing import Optional, Any, Sequence
+from datetime import datetime
 
 from mcp.server import Server
 from mcp.types import (
@@ -306,6 +307,308 @@ def _convert_to_simple_ruliu_format(html_content: str) -> str:
     except Exception as e:
         return f"转换错误：{str(e)}\n\n原始内容：\n{html_content}"
 
+def _convert_to_apple_notes_format(html_content: str) -> str:
+    """将HTML内容转换为Apple Notes友好的格式"""
+    if not BeautifulSoup or not html_content:
+        return html_content
+    
+    try:
+        # 解析HTML
+        soup = BeautifulSoup(html_content, 'html.parser')
+        
+        # 转换后的文本
+        result = []
+        
+        # 处理每个div元素
+        for element in soup.find_all(['div', 'ul', 'ol', 'li']):
+            text = element.get_text(strip=True)
+            if not text or len(text) < 3:
+                continue
+                
+            # 检测标题级别（基于字体大小）
+            if element.find('span', style=lambda x: x and 'font-size: 24px' in x):
+                # 主标题 - 使用Apple Notes支持的格式
+                result.append(f"\n{text}")
+                result.append("=" * min(len(text), 50))  # 下划线，但不要太长
+                result.append("")
+                
+            elif element.find('span', style=lambda x: x and 'font-size: 18px' in x):
+                # 二级标题 - 简化格式
+                clean_title = text.replace('🎯', '').replace('🚀', '').replace('📖', '').replace('🔧', '').replace('🎉', '').replace('💡', '').strip()
+                clean_title = clean_title.lstrip('：: -').strip()
+                result.append(f"\n{clean_title}")
+                result.append("-" * min(len(clean_title), 30))
+                result.append("")
+                
+            elif element.find('b') and not element.find('font', face="Courier"):
+                # 重要内容/小标题 - 使用简单的项目符号
+                if "：" in text or "场景" in text or "功能" in text:
+                    result.append(f"\n• {text}")
+                else:
+                    result.append(f"  ◦ {text}")
+                    
+            elif element.find('font', face="Courier"):
+                # 代码块 - 转换为简单的缩进文本
+                result.append(f"\n代码示例：")
+                for line in text.split('\n'):
+                    if line.strip():
+                        result.append(f"    {line}")
+                result.append("")
+                
+            elif element.name == 'li':
+                # 列表项 - 使用Apple Notes友好的符号
+                result.append(f"  • {text}")
+                
+            else:
+                # 普通段落
+                if len(text) > 15:  # 过滤太短的文本
+                    # 检查是否是特殊格式的内容
+                    if "→" in text:
+                        result.append(f"    {text}")
+                    else:
+                        result.append(f"\n{text}")
+        
+        # 清理和格式化
+        formatted_text = '\n'.join(result)
+        
+        # 去除多余的空行，但保持适当的间距
+        import re
+        formatted_text = re.sub(r'\n{4,}', '\n\n\n', formatted_text)
+        
+        # 为Apple Notes优化的最终格式
+        final_result = f"""{formatted_text}
+
+────────────────────────────────────
+
+📱 Apple Notes 优化说明：
+• 此格式已针对Apple Notes显示效果优化
+• 移除了复杂的Markdown语法
+• 使用简单的文本格式和符号
+• 保持清晰的层次结构
+
+💡 使用建议：
+• 直接复制粘贴到Apple Notes
+• 可手动调整字体大小和样式
+• 支持Apple Notes的富文本编辑
+
+🔄 转换时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
+"""
+        
+        return final_result
+        
+    except Exception as e:
+        return f"转换错误：{str(e)}\n\n原始内容：\n{html_content}"
+
+def _convert_markdown_to_apple_notes_format(markdown_content: str) -> str:
+    """将Markdown内容直接转换为Apple Notes友好的格式"""
+    if not markdown_content:
+        return markdown_content
+    
+    try:
+        lines = markdown_content.split('\n')
+        result = []
+        in_code_block = False
+        in_table = False
+        
+        for line in lines:
+            line = line.rstrip()
+            
+            # 处理代码块
+            if line.startswith('```'):
+                if in_code_block:
+                    # 结束代码块
+                    result.append("")
+                    result.append("")
+                    result.append("")  # 三个空行确保间距
+                    in_code_block = False
+                else:
+                    # 开始代码块
+                    result.append("")
+                    result.append("")
+                    result.append("【代码示例】")
+                    result.append("")
+                    in_code_block = True
+                continue
+            
+            if in_code_block:
+                # 代码行使用简单的缩进
+                result.append(f"  {line}")
+                continue
+            
+            # 处理表格
+            if '|' in line and not line.startswith('#'):
+                if not in_table:
+                    in_table = True
+                    result.append("")
+                    result.append("")
+                    result.append("【数据对比】")
+                    result.append("")
+                
+                # 跳过表格分隔行
+                if line.strip().replace('|', '').replace('-', '').replace(' ', '') == '':
+                    continue
+                
+                # 处理表格行
+                cells = [cell.strip() for cell in line.split('|') if cell.strip()]
+                if cells:
+                    # 使用更简洁的表格格式
+                    if len(cells) >= 2:
+                        result.append(f"• {cells[0]} → {cells[1]}")
+                        if len(cells) > 2:
+                            result.append(f"  说明：{' | '.join(cells[2:])}")
+                continue
+            else:
+                if in_table:
+                    in_table = False
+                    result.append("")
+                    result.append("")
+                    result.append("")
+            
+            # 处理标题
+            if line.startswith('#'):
+                level = len(line) - len(line.lstrip('#'))
+                title = line.lstrip('# ').strip()
+                
+                # 移除emoji和特殊符号，保留核心内容
+                import re
+                clean_title = re.sub(r'[🎯🚀📖🔧🎉💡📋📊🔍⚙️💾🔄⚡🧮🔥🔗💻🐛🎓🧠💎]', '', title).strip()
+                clean_title = re.sub(r'^[：:\-\s]+', '', clean_title)
+                clean_title = re.sub(r'[1-9]️⃣', '', clean_title).strip()  # 移除数字emoji
+                clean_title = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_title)  # 移除粗体标记
+                
+                if level == 1:
+                    # 主标题 - 前后都要有充足空行
+                    result.append("")
+                    result.append("")
+                    result.append("")
+                    result.append(f"【{clean_title}】")
+                    result.append("")
+                    result.append("")
+                    result.append("")
+                elif level == 2:
+                    # 二级标题 - 前后要有空行
+                    result.append("")
+                    result.append("")
+                    result.append("")
+                    result.append(f"■ {clean_title}")
+                    result.append("")
+                    result.append("")
+                elif level == 3:
+                    # 三级标题
+                    result.append("")
+                    result.append("")
+                    result.append(f"▶ {clean_title}")
+                    result.append("")
+                else:
+                    # 四级及以下标题
+                    result.append("")
+                    result.append(f"◆ {clean_title}")
+                    result.append("")
+                continue
+            
+            # 处理分隔线
+            if line.strip() == '---':
+                result.append("")
+                result.append("")
+                result.append("─" * 30)
+                result.append("")
+                result.append("")
+                continue
+            
+            # 处理列表
+            if line.startswith('- ') or line.startswith('* '):
+                content = line[2:].strip()
+                # 移除markdown格式
+                content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)  # 粗体
+                content = re.sub(r'\*(.*?)\*', r'\1', content)      # 斜体
+                content = re.sub(r'`(.*?)`', r'\1', content)        # 代码
+                content = re.sub(r'[✅🔸]', '•', content)           # 统一符号
+                result.append(f"  • {content}")
+                result.append("")  # 每个列表项后加空行
+                continue
+            
+            # 处理数字列表
+            if re.match(r'^\d+\.\s', line):
+                content = re.sub(r'^\d+\.\s', '', line).strip()
+                content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+                content = re.sub(r'\*(.*?)\*', r'\1', content)
+                content = re.sub(r'`(.*?)`', r'\1', content)
+                result.append(f"  {content}")
+                result.append("")
+                result.append("")  # 数字列表项后加两个空行
+                continue
+            
+            # 处理普通段落
+            if line.strip():
+                # 移除markdown格式
+                clean_line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)  # 粗体
+                clean_line = re.sub(r'\*(.*?)\*', r'\1', clean_line)  # 斜体
+                clean_line = re.sub(r'`(.*?)`', r'\1', clean_line)    # 行内代码
+                clean_line = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', clean_line)  # 链接
+                
+                # 检查是否是特殊格式的段落
+                if clean_line.startswith('####'):
+                    # 四级标题作为小节标题
+                    title = clean_line.lstrip('# ').strip()
+                    result.append("")
+                    result.append("")
+                    result.append(f"◆ {title}")
+                    result.append("")
+                elif '→' in clean_line or '↑' in clean_line:
+                    # 流程说明
+                    result.append("")
+                    result.append(f"  {clean_line}")
+                    result.append("")
+                    result.append("")
+                else:
+                    # 普通段落 - 前后都要有空行
+                    if clean_line.strip():
+                        result.append("")
+                        result.append(clean_line)
+                        result.append("")
+                        result.append("")  # 段落后额外空行
+            else:
+                # 保持原有空行，但不重复添加
+                if result and result[-1] != "":
+                    result.append("")
+        
+        # 清理和格式化
+        formatted_text = '\n'.join(result)
+        
+        # 去除开头和结尾的多余空行
+        formatted_text = formatted_text.strip()
+        
+        # 但不要过度压缩空行，保持最多3个连续空行
+        import re
+        formatted_text = re.sub(r'\n{5,}', '\n\n\n\n', formatted_text)
+        
+        # 添加Apple Notes友好的结尾
+        final_result = f"""{formatted_text}
+
+
+─────────────────────────────
+
+
+📝 Apple Notes 优化版本
+
+
+✓ 已移除复杂的Markdown语法
+
+✓ 优化了段落间距和层次结构  
+
+✓ 使用Apple Notes友好的符号
+
+✓ 适合直接复制粘贴使用
+
+
+💡 建议：可以手动调整字体大小来突出重点内容
+"""
+        
+        return final_result
+        
+    except Exception as e:
+        return f"转换错误：{str(e)}\n\n原始内容：\n{markdown_content}"
+
 @server.list_tools()
 async def handle_list_tools() -> list[Tool]:
     """列出可用的工具"""
@@ -419,6 +722,38 @@ async def handle_list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["title"]
+            }
+        ),
+        Tool(
+            name="convert_note_to_apple_notes_format",
+            description="将Apple Notes笔记内容转换为Apple Notes优化格式，移除复杂Markdown语法，适合在Apple Notes中显示",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "要转换的笔记标题（必需）"
+                    },
+                    "folder": {
+                        "type": "string",
+                        "description": "笔记所在的文件夹（可选）"
+                    }
+                },
+                "required": ["title"]
+            }
+        ),
+        Tool(
+            name="convert_markdown_to_apple_notes_format",
+            description="将Markdown文本直接转换为Apple Notes友好格式，适合复制粘贴到Apple Notes",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "markdown_content": {
+                        "type": "string",
+                        "description": "要转换的Markdown内容（必需）"
+                    }
+                },
+                "required": ["markdown_content"]
             }
         ),
         Tool(
@@ -591,6 +926,54 @@ async def handle_call_tool(name: str, arguments: dict) -> list[TextContent]:
                         "format_style": format_style
                     }
                 }
+        
+        return [TextContent(type="text", text=str(result))]
+    
+    elif name == "convert_note_to_apple_notes_format":
+        title = arguments.get("title")
+        folder = arguments.get("folder", "")
+        
+        if not title:
+            return [TextContent(type="text", text='{"status": "error", "message": "Title parameter is required for conversion operation."}')]
+        
+        # 首先获取笔记内容
+        effective_folder = folder if folder else ""
+        
+        result = _execute_applescript("get_note_content.scpt", title, effective_folder)
+        
+        if result["status"] == "success":
+            note_content = result.get("data", {}).get("details", "")
+            
+            if note_content.startswith("错误："):
+                result = {"status": "error", "message": note_content}
+            else:
+                result = {
+                    "status": "success",
+                    "message": f"Successfully converted note '{title}' to Apple Notes optimized format.",
+                    "data": {
+                        "title": title,
+                        "original_content": note_content,
+                        "apple_notes_format": _convert_to_apple_notes_format(note_content),
+                        "folder": effective_folder
+                    }
+                }
+        
+        return [TextContent(type="text", text=str(result))]
+    
+    elif name == "convert_markdown_to_apple_notes_format":
+        markdown_content = arguments.get("markdown_content")
+        
+        if not markdown_content:
+            return [TextContent(type="text", text='{"status": "error", "message": "markdown_content parameter is required for conversion operation."}')]
+        
+        result = {
+            "status": "success",
+            "message": f"Successfully converted Markdown content to Apple Notes friendly format.",
+            "data": {
+                "markdown_content": markdown_content,
+                "apple_notes_format": _convert_markdown_to_apple_notes_format(markdown_content)
+            }
+        }
         
         return [TextContent(type="text", text=str(result))]
     
