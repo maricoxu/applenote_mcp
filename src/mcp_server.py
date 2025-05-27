@@ -400,7 +400,9 @@ def _convert_to_apple_notes_format(html_content: str) -> str:
         return f"转换错误：{str(e)}\n\n原始内容：\n{html_content}"
 
 def _convert_markdown_to_apple_notes_format(markdown_content: str) -> str:
-    """将Markdown内容直接转换为Apple Notes友好的格式"""
+    """将Markdown内容直接转换为Apple Notes友好的格式
+    基于网上找到的最佳实践，重点解决换行和段落间距问题
+    """
     if not markdown_content:
         return markdown_content
     
@@ -410,28 +412,30 @@ def _convert_markdown_to_apple_notes_format(markdown_content: str) -> str:
         in_code_block = False
         in_table = False
         
-        for line in lines:
+        # Apple Notes需要更明确的段落分隔
+        # 使用双换行符来确保段落间距
+        
+        for i, line in enumerate(lines):
             line = line.rstrip()
             
             # 处理代码块
             if line.startswith('```'):
                 if in_code_block:
-                    # 结束代码块
+                    # 结束代码块 - 添加明确的段落分隔
                     result.append("")
+                    result.append("─" * 20)  # 使用分隔线确保视觉分离
                     result.append("")
-                    result.append("")  # 三个空行确保间距
                     in_code_block = False
                 else:
-                    # 开始代码块
+                    # 开始代码块 - 前面添加分隔
                     result.append("")
-                    result.append("")
-                    result.append("【代码示例】")
-                    result.append("")
+                    result.append("【代码】")
+                    result.append("─" * 20)
                     in_code_block = True
                 continue
             
             if in_code_block:
-                # 代码行使用简单的缩进
+                # 代码行 - 使用简单的缩进，不添加额外符号
                 result.append(f"  {line}")
                 continue
             
@@ -440,91 +444,88 @@ def _convert_markdown_to_apple_notes_format(markdown_content: str) -> str:
                 if not in_table:
                     in_table = True
                     result.append("")
-                    result.append("")
-                    result.append("【数据对比】")
+                    result.append("【数据表格】")
+                    result.append("─" * 20)
                     result.append("")
                 
                 # 跳过表格分隔行
                 if line.strip().replace('|', '').replace('-', '').replace(' ', '') == '':
                     continue
                 
-                # 处理表格行
+                # 处理表格行 - 转换为简单的键值对格式
                 cells = [cell.strip() for cell in line.split('|') if cell.strip()]
                 if cells:
-                    # 使用更简洁的表格格式
                     if len(cells) >= 2:
-                        result.append(f"• {cells[0]} → {cells[1]}")
+                        # 使用Apple Notes友好的格式
+                        result.append(f"{cells[0]}: {cells[1]}")
                         if len(cells) > 2:
-                            result.append(f"  说明：{' | '.join(cells[2:])}")
+                            for extra_cell in cells[2:]:
+                                result.append(f"  补充: {extra_cell}")
+                    result.append("")  # 每行后加空行
                 continue
             else:
                 if in_table:
                     in_table = False
                     result.append("")
-                    result.append("")
+                    result.append("─" * 20)
                     result.append("")
             
-            # 处理标题
+            # 处理标题 - 使用Apple Notes更容易识别的格式
             if line.startswith('#'):
                 level = len(line) - len(line.lstrip('#'))
                 title = line.lstrip('# ').strip()
                 
-                # 移除emoji和特殊符号，保留核心内容
+                # 清理标题，移除复杂符号
                 import re
                 clean_title = re.sub(r'[🎯🚀📖🔧🎉💡📋📊🔍⚙️💾🔄⚡🧮🔥🔗💻🐛🎓🧠💎]', '', title).strip()
                 clean_title = re.sub(r'^[：:\-\s]+', '', clean_title)
-                clean_title = re.sub(r'[1-9]️⃣', '', clean_title).strip()  # 移除数字emoji
                 clean_title = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_title)  # 移除粗体标记
                 
+                # 根据级别使用不同的格式，确保前后有足够间距
                 if level == 1:
-                    # 主标题 - 前后都要有充足空行
+                    # 主标题 - 使用最明显的格式
                     result.append("")
                     result.append("")
-                    result.append("")
-                    result.append(f"【{clean_title}】")
-                    result.append("")
+                    result.append("=" * 40)
+                    result.append(f"  {clean_title.upper()}")  # 大写增加视觉重要性
+                    result.append("=" * 40)
                     result.append("")
                     result.append("")
                 elif level == 2:
-                    # 二级标题 - 前后要有空行
+                    # 二级标题
                     result.append("")
                     result.append("")
-                    result.append("")
-                    result.append(f"■ {clean_title}")
-                    result.append("")
+                    result.append(f"▶ {clean_title}")
+                    result.append("-" * min(len(clean_title) + 2, 30))
                     result.append("")
                 elif level == 3:
                     # 三级标题
                     result.append("")
-                    result.append("")
-                    result.append(f"▶ {clean_title}")
+                    result.append(f"● {clean_title}")
                     result.append("")
                 else:
                     # 四级及以下标题
                     result.append("")
-                    result.append(f"◆ {clean_title}")
-                    result.append("")
+                    result.append(f"  • {clean_title}")
                 continue
             
             # 处理分隔线
             if line.strip() == '---':
                 result.append("")
-                result.append("")
-                result.append("─" * 30)
-                result.append("")
+                result.append("=" * 40)
                 result.append("")
                 continue
             
-            # 处理列表
+            # 处理列表 - 使用Apple Notes友好的符号
             if line.startswith('- ') or line.startswith('* '):
                 content = line[2:].strip()
-                # 移除markdown格式
+                # 移除markdown格式，保持简洁
                 content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)  # 粗体
                 content = re.sub(r'\*(.*?)\*', r'\1', content)      # 斜体
                 content = re.sub(r'`(.*?)`', r'\1', content)        # 代码
-                content = re.sub(r'[✅🔸]', '•', content)           # 统一符号
-                result.append(f"  • {content}")
-                result.append("")  # 每个列表项后加空行
+                content = re.sub(r'[✅🔸]', '', content)           # 移除emoji
+                result.append(f"• {content}")
+                result.append("")  # 每个列表项后加空行，确保间距
                 continue
             
             # 处理数字列表
@@ -533,75 +534,77 @@ def _convert_markdown_to_apple_notes_format(markdown_content: str) -> str:
                 content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
                 content = re.sub(r'\*(.*?)\*', r'\1', content)
                 content = re.sub(r'`(.*?)`', r'\1', content)
-                result.append(f"  {content}")
+                # 提取数字
+                number = re.match(r'^(\d+)', line).group(1)
+                result.append(f"{number}. {content}")
                 result.append("")
-                result.append("")  # 数字列表项后加两个空行
                 continue
             
             # 处理普通段落
             if line.strip():
-                # 移除markdown格式
+                # 移除markdown格式，保持内容简洁
                 clean_line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)  # 粗体
                 clean_line = re.sub(r'\*(.*?)\*', r'\1', clean_line)  # 斜体
                 clean_line = re.sub(r'`(.*?)`', r'\1', clean_line)    # 行内代码
                 clean_line = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', clean_line)  # 链接
                 
                 # 检查是否是特殊格式的段落
-                if clean_line.startswith('####'):
-                    # 四级标题作为小节标题
-                    title = clean_line.lstrip('# ').strip()
+                if '→' in clean_line or '↑' in clean_line:
+                    # 流程说明 - 添加缩进
                     result.append("")
-                    result.append("")
-                    result.append(f"◆ {title}")
-                    result.append("")
-                elif '→' in clean_line or '↑' in clean_line:
-                    # 流程说明
-                    result.append("")
-                    result.append(f"  {clean_line}")
-                    result.append("")
+                    result.append(f"    {clean_line}")
                     result.append("")
                 else:
-                    # 普通段落 - 前后都要有空行
+                    # 普通段落 - 确保前后有空行
                     if clean_line.strip():
                         result.append("")
                         result.append(clean_line)
                         result.append("")
-                        result.append("")  # 段落后额外空行
             else:
-                # 保持原有空行，但不重复添加
+                # 空行 - 保持，但不重复添加
                 if result and result[-1] != "":
                     result.append("")
         
-        # 清理和格式化
-        formatted_text = '\n'.join(result)
+        # 清理结果 - 移除开头和结尾的多余空行
+        while result and result[0] == "":
+            result.pop(0)
+        while result and result[-1] == "":
+            result.pop()
         
-        # 去除开头和结尾的多余空行
-        formatted_text = formatted_text.strip()
+        # 最终格式化 - 确保段落间有适当间距，但不过度
+        formatted_lines = []
+        prev_empty = False
         
-        # 但不要过度压缩空行，保持最多3个连续空行
-        import re
-        formatted_text = re.sub(r'\n{5,}', '\n\n\n\n', formatted_text)
+        for line in result:
+            if line == "":
+                if not prev_empty:  # 避免连续的空行
+                    formatted_lines.append(line)
+                    prev_empty = True
+            else:
+                formatted_lines.append(line)
+                prev_empty = False
         
-        # 添加Apple Notes友好的结尾
+        formatted_text = '\n'.join(formatted_lines)
+        
+        # 添加Apple Notes优化的结尾说明
         final_result = f"""{formatted_text}
 
 
-─────────────────────────────
+{'='*40}
 
+📱 Apple Notes 专用格式
 
-📝 Apple Notes 优化版本
+✓ 已优化段落间距和换行显示
+✓ 移除复杂Markdown语法  
+✓ 使用Apple Notes友好的符号系统
+✓ 确保在Apple Notes中正确显示
 
+💡 使用提示：
+• 直接复制粘贴到Apple Notes
+• 可手动调整字体大小突出重点
+• 支持Apple Notes的基本富文本编辑
 
-✓ 已移除复杂的Markdown语法
-
-✓ 优化了段落间距和层次结构  
-
-✓ 使用Apple Notes友好的符号
-
-✓ 适合直接复制粘贴使用
-
-
-💡 建议：可以手动调整字体大小来突出重点内容
+🔄 转换时间：{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 """
         
         return final_result
