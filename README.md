@@ -10,6 +10,7 @@
 - 🔍 **获取内容** - 读取笔记的完整内容
 - 📁 **文件夹支持** - 在指定文件夹中组织笔记
 - 🎨 **Markdown转换** - 自动将Markdown转换为富文本
+- 🔄 **格式转换** - 支持如流知识库和Apple Notes优化格式转换
 
 ## 🚀 快速开始
 
@@ -171,6 +172,11 @@ python test_mcp_connection.py
 请显示"今日任务"笔记的内容
 ```
 
+#### 格式转换
+```
+请将"技术文档"笔记转换为Apple Notes优化格式
+```
+
 ### 可用工具
 
 | 工具名称 | 功能 | 参数 |
@@ -179,6 +185,9 @@ python test_mcp_connection.py
 | `append_to_apple_note` | 追加内容 | `title`, `content`, `folder`, `input_format` |
 | `list_apple_notes` | 列出笔记 | `folder` |
 | `get_apple_note_content` | 获取内容 | `title`, `folder` |
+| `convert_note_to_ruliu_format` | 转换为如流格式 | `title`, `folder`, `format_style` |
+| `convert_note_to_apple_notes_format` | 转换为Apple Notes优化格式 | `title`, `folder` |
+| `convert_markdown_to_apple_notes_format` | Markdown转Apple Notes格式 | `markdown_content` |
 
 ### 参数说明
 
@@ -186,6 +195,8 @@ python test_mcp_connection.py
 - **content**: 笔记内容
 - **folder**: 文件夹名称（可选，空则使用默认文件夹）
 - **input_format**: 输入格式，`"text"` 或 `"markdown"`（默认：`"text"`）
+- **format_style**: 转换样式，`"detailed"` 或 `"simple"`（默认：`"simple"`）
+- **markdown_content**: 要转换的Markdown文本内容
 
 ## 🛠️ 开发和调试
 
@@ -273,6 +284,11 @@ brew install python@3.11
 rm -rf .venv
 ./install.sh
 ```
+
+#### 7. 格式转换问题
+- **Markdown格式在Apple Notes中显示不佳**：使用`convert_markdown_to_apple_notes_format`工具
+- **复杂表格转换异常**：表格会自动转换为简单的列表格式
+- **代码块格式丢失**：代码块会转换为缩进文本，保持可读性
 
 ### 获取详细日志
 

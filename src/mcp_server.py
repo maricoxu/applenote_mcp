@@ -583,6 +583,209 @@ Apple Notes 优化版本
     except Exception as e:
         return f"转换错误：{str(e)}\n\n原始内容：\n{markdown_content}"
 
+def _parse_markdown_to_rich_text(markdown_content: str) -> str:
+    """解析Markdown内容并转换为Apple Notes富文本格式
+    这个函数会解析Markdown结构，然后生成Apple Notes能够理解的富文本
+    """
+    if not markdown_content:
+        return markdown_content
+    
+    try:
+        lines = markdown_content.split('\n')
+        rich_text_elements = []
+        in_code_block = False
+        in_table = False
+        
+        for line in lines:
+            line = line.rstrip()
+            
+            # 处理代码块
+            if line.startswith('```'):
+                if in_code_block:
+                    # 结束代码块
+                    rich_text_elements.append({
+                        'type': 'paragraph',
+                        'content': '',
+                        'style': 'normal'
+                    })
+                    in_code_block = False
+                else:
+                    # 开始代码块
+                    rich_text_elements.append({
+                        'type': 'paragraph',
+                        'content': '代码示例：',
+                        'style': 'bold'
+                    })
+                    in_code_block = True
+                continue
+            
+            if in_code_block:
+                # 代码行
+                rich_text_elements.append({
+                    'type': 'paragraph',
+                    'content': line,
+                    'style': 'code',
+                    'indent': 1
+                })
+                continue
+            
+            # 处理标题
+            if line.startswith('#'):
+                level = len(line) - len(line.lstrip('#'))
+                title = line.lstrip('# ').strip()
+                
+                # 清理标题
+                import re
+                clean_title = re.sub(r'[🎯🚀📖🔧🎉💡📋📊🔍⚙️💾🔄⚡🧮🔥🔗💻🐛🎓🧠💎]', '', title).strip()
+                clean_title = re.sub(r'^[：:\-\s]+', '', clean_title)
+                clean_title = re.sub(r'\*\*(.*?)\*\*', r'\1', clean_title)
+                
+                # 根据级别设置不同的样式
+                if level == 1:
+                    style = 'title'
+                    font_size = 24
+                elif level == 2:
+                    style = 'heading'
+                    font_size = 20
+                elif level == 3:
+                    style = 'subheading'
+                    font_size = 18
+                else:
+                    style = 'bold'
+                    font_size = 16
+                
+                rich_text_elements.append({
+                    'type': 'heading',
+                    'content': clean_title,
+                    'level': level,
+                    'style': style,
+                    'font_size': font_size
+                })
+                
+                # 添加段落间距
+                rich_text_elements.append({
+                    'type': 'paragraph',
+                    'content': '',
+                    'style': 'normal'
+                })
+                continue
+            
+            # 处理列表
+            if line.startswith('- ') or line.startswith('* '):
+                content = line[2:].strip()
+                # 移除markdown格式
+                content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+                content = re.sub(r'\*(.*?)\*', r'\1', content)
+                content = re.sub(r'`(.*?)`', r'\1', content)
+                
+                rich_text_elements.append({
+                    'type': 'list_item',
+                    'content': content,
+                    'style': 'bullet'
+                })
+                continue
+            
+            # 处理数字列表
+            if re.match(r'^\d+\.\s', line):
+                content = re.sub(r'^\d+\.\s', '', line).strip()
+                content = re.sub(r'\*\*(.*?)\*\*', r'\1', content)
+                
+                rich_text_elements.append({
+                    'type': 'list_item',
+                    'content': content,
+                    'style': 'numbered'
+                })
+                continue
+            
+            # 处理普通段落
+            if line.strip():
+                # 移除markdown格式
+                clean_line = re.sub(r'\*\*(.*?)\*\*', r'\1', line)
+                clean_line = re.sub(r'\*(.*?)\*', r'\1', clean_line)
+                clean_line = re.sub(r'`(.*?)`', r'\1', clean_line)
+                clean_line = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', clean_line)
+                
+                if clean_line.strip():
+                    rich_text_elements.append({
+                        'type': 'paragraph',
+                        'content': clean_line,
+                        'style': 'normal'
+                    })
+                    
+                    # 添加段落间距
+                    rich_text_elements.append({
+                        'type': 'paragraph',
+                        'content': '',
+                        'style': 'normal'
+                    })
+            else:
+                # 空行
+                rich_text_elements.append({
+                    'type': 'paragraph',
+                    'content': '',
+                    'style': 'normal'
+                })
+        
+        # 将结构化数据转换为Apple Notes可以理解的格式
+        return _convert_rich_elements_to_apple_notes(rich_text_elements)
+        
+    except Exception as e:
+        return f"解析错误：{str(e)}\n\n原始内容：\n{markdown_content}"
+
+def _convert_rich_elements_to_apple_notes(elements: list) -> str:
+    """将结构化的富文本元素转换为Apple Notes格式
+    这里我们先生成一个优化的纯文本版本，后续可以扩展为真正的富文本
+    """
+    result = []
+    
+    for element in elements:
+        if element['type'] == 'heading':
+            # 标题 - 使用不同的视觉层次
+            level = element.get('level', 1)
+            content = element['content']
+            
+            if level == 1:
+                result.append("")
+                result.append(content.upper())
+                result.append("=" * len(content))
+                result.append("")
+            elif level == 2:
+                result.append("")
+                result.append(f"■ {content}")
+                result.append("")
+            elif level == 3:
+                result.append("")
+                result.append(f"▶ {content}")
+                result.append("")
+            else:
+                result.append(f"• {content}")
+                result.append("")
+                
+        elif element['type'] == 'list_item':
+            # 列表项
+            content = element['content']
+            style = element.get('style', 'bullet')
+            
+            if style == 'numbered':
+                result.append(f"  {content}")
+            else:
+                result.append(f"  • {content}")
+                
+        elif element['type'] == 'paragraph':
+            # 段落
+            content = element['content']
+            style = element.get('style', 'normal')
+            indent = element.get('indent', 0)
+            
+            if style == 'code':
+                result.append(f"{'    ' * (indent + 1)}{content}")
+            elif style == 'bold':
+                result.append(f"**{content}**" if content else "")
+            else:
+                result.append(content)
+    
+    return '\n'.join(result)
+
 @server.list_tools()
 async def handle_list_tools() -> list[Tool]:
     """列出可用的工具"""
@@ -748,6 +951,28 @@ async def handle_list_tools() -> list[Tool]:
                     }
                 },
                 "required": ["dialogue_text"]
+            }
+        ),
+        Tool(
+            name="create_rich_apple_note",
+            description="解析Markdown内容并创建Apple Notes原生富文本格式笔记，避免格式转换问题",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "type": "string",
+                        "description": "笔记标题（可选，如果为空则自动生成）"
+                    },
+                    "markdown_content": {
+                        "type": "string",
+                        "description": "Markdown格式的内容"
+                    },
+                    "folder": {
+                        "type": "string",
+                        "description": "目标文件夹（可选，如果为空则使用默认文件夹）"
+                    }
+                },
+                "required": ["markdown_content"]
             }
         )
     ]
@@ -986,6 +1211,26 @@ async def handle_call_tool(name: str, arguments: dict) -> list[TextContent]:
                 "status": "error",
                 "message": f"Error converting AI dialogue: {str(e)}"
             }
+        
+        return [TextContent(type="text", text=str(result))]
+    
+    elif name == "create_rich_apple_note":
+        title = arguments.get("title", "")
+        markdown_content = arguments.get("markdown_content", "")
+        folder = arguments.get("folder", "")
+        
+        # 解析Markdown内容并创建Apple Notes原生富文本格式笔记
+        rich_text_content = _parse_markdown_to_rich_text(markdown_content)
+        
+        # 执行AppleScript
+        effective_title = title if title else ""
+        effective_folder = folder if folder else ""
+        
+        result = _execute_applescript("create_note_advanced.scpt", effective_title, rich_text_content, effective_folder)
+        
+        if result["status"] == "success":
+            display_title = title if title else "Untitled (auto-generated)"
+            result["message"] = f"Note '{display_title}' created successfully."
         
         return [TextContent(type="text", text=str(result))]
     

@@ -180,7 +180,7 @@ echo "🧪 测试MCP服务器..."
 if [ -f "test_mcp_connection.py" ]; then
     if .venv/bin/python test_mcp_connection.py; then
         print_success "MCP服务器测试通过"
-    else
+else
         print_error "MCP服务器测试失败"
         echo ""
         echo "🔧 故障排除建议："
@@ -303,7 +303,7 @@ echo ""
 echo "💡 使用示例："
 echo '   "请帮我创建一个笔记，标题是测试，内容是Hello World"'
 echo ""
-echo "🔧 如果遇到问题，请查看README.md的故障排除部分"
+echo "🔧 如果遇到问题，请查看README.md的故障排除部分" 
 echo ""
 echo "📚 更多信息："
 echo "   - 项目地址: https://github.com/maricoxu/applenote_mcp"

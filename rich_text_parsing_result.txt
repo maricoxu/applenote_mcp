@@ -1,0 +1,60 @@
+
+PYTORCH BF16算子分析
+================
+
+
+
+
+■ 核心问题
+
+
+
+在PyTorch生态中，当模型使用BF16类型调用CUDA算子时，实际的计算类型行为是什么？
+
+
+
+■ 主要发现
+
+
+
+
+▶ 1. 默认行为：大部分算子转换为FP32计算
+
+
+
+  • 基本算术运算（+, -, *, /）
+  • 激活函数（ReLU, Sigmoid, Tanh等）
+  • 几何函数（sin, cos, exp等）
+
+
+▶ 2. 例外情况：直接使用BF16的算子
+
+
+
+  • BF16 ↔ FP32 转换
+  • 量化相关操作
+  • 某些CUTLASS实现
+
+
+■ 代码示例
+
+
+
+**代码示例：**
+        // aten/src/ATen/OpMathType.h
+        template <>
+        struct OpMathType<at::BFloat16> {
+          using type = float;  // BF16 → FP32
+        };
+
+
+这是一个测试段落，包含了粗体文本和行内代码。
+
+
+
+■ 总结
+
+
+
+通过分析可以看出，PyTorch在处理BF16时采用了混合精度策略。
+
